@@ -1,0 +1,5 @@
+name: SpoutCasino
+main: org.dyndns.pamelloes.SpoutCasino.SpoutCasino
+version: 0.1
+description: An implementation of a Casino for Spout.
+depend: [Spout]
