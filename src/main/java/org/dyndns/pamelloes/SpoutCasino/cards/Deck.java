@@ -24,7 +24,7 @@ public class Deck {
 			for(CardNumber number : CardNumber.values()) {
 				if(number == CardNumber.Joker) continue;
 				int location = (suit.getValue()-1)*13;
-				location+=number.getValue();
+				location+=(number.getValue()-1);
 				cards[location] = new Card(this,suit,number);
 			}
 		}
@@ -58,7 +58,7 @@ public class Deck {
 	 * from the from the active deck, however so be warned.
 	 */
 	public Card dealTop() {
-		return deck.remove(deck.size()-1);
+		return deck.remove(0);
 	}
 	
 	/**
@@ -66,7 +66,7 @@ public class Deck {
 	 * from the from the active deck, however so be warned.
 	 */
 	public Card dealBottom() {
-		return deck.remove(0);
+		return deck.remove(deck.size()-1);
 	}
 	
 	/**

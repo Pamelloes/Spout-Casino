@@ -75,4 +75,21 @@ public class Card {
 		if(!alt.number.equals(number)) return false;
 		return true;
 	}
+	
+	public String getPath(boolean large) {
+		StringBuilder sb = new StringBuilder("Card Deck/");
+		if(getNumber().getValue()==0) {
+			sb.append("joker-r");
+		} else {
+			sb.append(getSuit().name().toLowerCase() + "-");
+			if (getNumber().getValue() == 1) sb.append("a");
+			else if (getNumber().getValue() == 11) sb.append("j");
+			else if (getNumber().getValue() == 12) sb.append("q");
+			else if (getNumber().getValue() == 13) sb.append("k");
+			else sb.append(getNumber().getValue());
+		}
+		if(large) sb.append("-150.png");
+		else sb.append("-75.png");
+		return sb.toString();
+	}
 }
