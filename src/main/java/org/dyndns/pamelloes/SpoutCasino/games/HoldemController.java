@@ -1,4 +1,4 @@
-package org.dyndns.pamelloes.SpoutCasino.cards;
+package org.dyndns.pamelloes.SpoutCasino.games;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.dyndns.pamelloes.SpoutCasino.SpoutCasino;
+import org.dyndns.pamelloes.SpoutCasino.cards.Card;
 import org.dyndns.pamelloes.SpoutCasino.gui.WaitingGui;
 import org.getspout.spoutapi.inventory.SpoutItemStack;
 import org.getspout.spoutapi.player.SpoutPlayer;

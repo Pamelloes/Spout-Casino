@@ -1,4 +1,4 @@
-package org.dyndns.pamelloes.SpoutCasino.cards;
+package org.dyndns.pamelloes.SpoutCasino.games;
 
 import org.getspout.spoutapi.player.SpoutPlayer;
 
