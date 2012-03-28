@@ -2,6 +2,7 @@ package org.dyndns.pamelloes.SpoutCasino.cards;
 
 public class Card {
 	public static enum Suit {
+		Joker(0),
 		Clubs(1),
 		Diamonds(2),
 		Hearts(3),
@@ -18,6 +19,7 @@ public class Card {
 		}
 	};
 	public static enum CardNumber {
+		Joker1(0),
 		Ace(1),
 		Two(2),
 		Three(3),
@@ -31,7 +33,7 @@ public class Card {
 		Jack(11),
 		Queen(12),
 		King(13),
-		Joker(0);
+		Joker2(14);
 		
 		private final int value;
 		
@@ -80,6 +82,8 @@ public class Card {
 		StringBuilder sb = new StringBuilder("Card Deck/");
 		if(getNumber().getValue()==0) {
 			sb.append("joker-r");
+		} else if (getNumber().getValue()==14) {
+			sb.append("joker-b");
 		} else {
 			sb.append(getSuit().name().toLowerCase() + "-");
 			if (getNumber().getValue() == 1) sb.append("a");

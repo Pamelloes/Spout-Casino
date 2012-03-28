@@ -24,6 +24,7 @@ public class CreateGui extends TableGui {
 	protected void makeGui() {
 		setSize(210,230);
 		casino.extractFile("blackjack.jpg", true);
+		casino.extractFile("texasholdem.jpg", true);
 		
 		Container master = new GenericContainer().setLayout(ContainerType.OVERLAY);
 		GenericLabel header = new GenericLabel("Choose which game the table will play.");
@@ -43,7 +44,7 @@ public class CreateGui extends TableGui {
 		Container rows = new GenericContainer().setLayout(ContainerType.VERTICAL);
 		Container top = new GenericContainer().setLayout(ContainerType.HORIZONTAL);
 		
-		ImageButton ne = getIb("plugins/SpoutCasino/blackjack.jpg", 0);
+		ImageButton ne = getIb("plugins/SpoutCasino/texasholdem.jpg", 0);
 		ne.setMargin(15, 5, 5, 15);
 		
 		ImageButton nw = getIb("plugins/SpoutCasino/blackjack.jpg", 1);

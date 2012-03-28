@@ -20,8 +20,8 @@ public abstract class TableGui extends GenericPopup {
 	public TableGui(SpoutPlayer player) {
 		this.player = player;
 		casino = SpoutCasino.casino;
-		casino.extractFile("bg.jpg", true);
-		tex = new GenericTexture("plugins/SpoutCasino/bg.jpg");
+		casino.extractFile("bg.png", true);
+		tex = new GenericTexture("plugins/SpoutCasino/bg.png");
 		tex.setPriority(RenderPriority.High);
 		container.addChild(tex).setAnchor(WidgetAnchor.CENTER_CENTER);
 		setSize(200,200);

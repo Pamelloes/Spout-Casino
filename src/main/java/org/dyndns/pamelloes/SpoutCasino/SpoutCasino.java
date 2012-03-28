@@ -2,7 +2,6 @@ package org.dyndns.pamelloes.SpoutCasino;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.InputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
@@ -14,18 +13,29 @@ import org.dyndns.pamelloes.SpoutCasino.block.TableBlock;
 import org.getspout.spoutapi.SpoutManager;
 import org.getspout.spoutapi.block.design.Texture;
 import org.getspout.spoutapi.material.CustomBlock;
+import org.getspout.spoutapi.material.CustomItem;
+import org.getspout.spoutapi.material.item.GenericCustomItem;
 import org.getspout.spoutapi.plugin.SpoutPlugin;
 
 public class SpoutCasino extends SpoutPlugin {
 	public static SpoutCasino casino;
 	public static CustomBlock cardtable;
+	public static CustomItem ironchip,goldchip,diamondchip;
+	/** Determines the value of gold and diamond chips in iron chips. */
+	public static int goldrate = 10, diamondrate = 100;
 	
 	public void onEnable() {
 		casino = this;
 		//extractFile("condensedcards.png",true);
 		extractFile("cardtableoutput22.png",true);
-		Texture tex = new Texture(this, "plugins/SpoutCasino/cardtableoutput22.png", 128, 128, 64);
-		cardtable = new TableBlock(this, tex);
+		Texture tabletex = new Texture(this, "plugins/SpoutCasino/cardtableoutput22.png", 128, 128, 64);
+		cardtable = new TableBlock(this, tabletex);
+		extractFile("ironchip.png",true);
+		ironchip = new GenericCustomItem(this, "Iron Poker Chip", "plugins/SpoutCasino/ironchip.png");
+		extractFile("goldchip.png",true);
+		goldchip = new GenericCustomItem(this, "Gold Poker Chip", "plugins/SpoutCasino/goldchip.png");
+		extractFile("diamondchip.png",true);
+		diamondchip = new GenericCustomItem(this, "Diamond Poker Chip", "plugins/SpoutCasino/diamondchip.png");
 		
 		extractCards(true);
 		

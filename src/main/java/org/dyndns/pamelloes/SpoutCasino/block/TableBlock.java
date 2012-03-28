@@ -4,7 +4,6 @@ import org.bukkit.World;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
-import org.dyndns.pamelloes.SpoutCasino.gui.BlackJackGui;
 import org.dyndns.pamelloes.SpoutCasino.gui.CreateGui;
 import org.getspout.spoutapi.SpoutManager;
 import org.getspout.spoutapi.block.design.Texture;
@@ -14,7 +13,7 @@ import org.getspout.spoutapi.player.SpoutPlayer;
 public class TableBlock extends GenericCustomBlock {
 
 	public TableBlock(Plugin plugin, Texture tex) {
-		super(plugin, "CasinoTable", false, new TableBlockDesign(plugin, tex));
+		super(plugin, "Casino Table", false, new TableBlockDesign(plugin, tex));
 	}
 	
 	@Override
@@ -27,9 +26,7 @@ public class TableBlock extends GenericCustomBlock {
 	
 	@Override
 	public boolean onBlockInteract(World world, int x, int y, int z, SpoutPlayer player) {
-		BlackJackGui gui = new BlackJackGui(getPlugin(), player);
-		player.getMainScreen().attachPopupScreen(gui);
-		((TableBlockData) SpoutManager.getChunkDataManager().getBlockData("SpoutCasino", world, x, y, z)).players.add(player);
+		((TableBlockData) SpoutManager.getChunkDataManager().getBlockData("SpoutCasino", world, x, y, z)).onPlayerInteract(player);
 		return true;
 	}
 
@@ -37,6 +34,7 @@ public class TableBlock extends GenericCustomBlock {
     public void onBlockDestroyed(World world, int x, int y, int z) {
 		TableBlockData dat = (TableBlockData) SpoutManager.getChunkDataManager().getBlockData("SpoutCasino", world, x, y, z);
 		if(dat==null)  return;
+		dat.onBlockDestroyed();
 		SpoutManager.getChunkDataManager().removeBlockData("SpoutCasino", world, x, y, z);
 		HandlerList.unregisterAll(dat);
 	}

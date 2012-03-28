@@ -4,20 +4,20 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.dyndns.pamelloes.SpoutCasino.cards.GameController;
+import org.dyndns.pamelloes.SpoutCasino.cards.HoldemController;
 import org.getspout.spoutapi.SpoutManager;
 import org.getspout.spoutapi.event.spout.ServerTickEvent;
 import org.getspout.spoutapi.player.SpoutPlayer;
 
 @SuppressWarnings("serial")
 public class TableBlockData implements Listener, Serializable {
-	transient List<SpoutPlayer> players = new ArrayList<SpoutPlayer>();
+	private transient GameController control;
 	
 	private int gametype = 0;
 	
@@ -34,15 +34,34 @@ public class TableBlockData implements Listener, Serializable {
     
     @EventHandler
     public void onServerTick(ServerTickEvent e) {
-    	
+    	if(control!=null) control.onTick();
+    }
+    
+    public void onPlayerInteract(SpoutPlayer player) {
+    	control.handleEntryRequest(player);
+    }
+    
+    public void onBlockDestroyed() {
+    	control.handleForcedTermination();
     }
     
     public void setGameType(int game) {
     	gametype = game;
+    	if(control != null) control.handleForcedTermination();
+    	control = getNewControl();
     }
     
     public int getGameType() {
     	return gametype;
+    }
+    
+    private GameController getNewControl() {
+    	switch(getGameType()) {
+    	case 0:
+    		return new HoldemController();
+    	default:
+    		return null;
+    	}
     }
     
     private void writeObject(ObjectOutputStream out) throws IOException {
@@ -51,11 +70,11 @@ public class TableBlockData implements Listener, Serializable {
     
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
     	in.defaultReadObject();
-    	players = new ArrayList<SpoutPlayer>();
+    	control = getNewControl();
         Bukkit.getPluginManager().getPlugin("Spout").getServer().getPluginManager().registerEvents(this, Bukkit.getPluginManager().getPlugin("Spout"));
         Bukkit.getScheduler().scheduleSyncDelayedTask(Bukkit.getPluginManager().getPlugin("Spout"), new Runnable() {
         	public void run() {
-        		SpoutManager.getChunkDataManager().setBlockData("ExtraFurnaces", Bukkit.getWorld(world), x, y, z, TableBlockData.this);
+        		SpoutManager.getChunkDataManager().setBlockData("SpoutCasino", Bukkit.getWorld(world), x, y, z, TableBlockData.this);
         	}
         }, 1L);
     }

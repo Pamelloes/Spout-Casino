@@ -19,10 +19,11 @@ public class Deck {
 	 * to fill the active deck.
 	 */
 	public Deck() {
-		jokers = new Card[]{new Card(this,null,CardNumber.Joker), new Card(this,null,CardNumber.Joker)};
+		jokers = new Card[]{new Card(this,Suit.Joker,CardNumber.Joker1), new Card(this,Suit.Joker,CardNumber.Joker2)};
 		for(Suit suit : Suit.values()) {
+			if(suit == Suit.Joker) continue;
 			for(CardNumber number : CardNumber.values()) {
-				if(number == CardNumber.Joker) continue;
+				if(number == CardNumber.Joker1 || number == CardNumber.Joker2) continue;
 				int location = (suit.getValue()-1)*13;
 				location+=(number.getValue()-1);
 				cards[location] = new Card(this,suit,number);
@@ -38,12 +39,9 @@ public class Deck {
 	 */
 	public void makeDeck(boolean withJokers) {
 		deck.clear();
-		deck.ensureCapacity(52);
+		deck.ensureCapacity(withJokers ? 54 : 52);
 		deck.addAll(Arrays.asList(cards));
-		if(withJokers) {
-			deck.ensureCapacity(54);
-			deck.addAll(Arrays.asList(jokers));
-		}
+		if(withJokers) deck.addAll(Arrays.asList(jokers));
 	}
 	
 	/**
@@ -82,41 +80,31 @@ public class Deck {
 	}
 	
 	/**
-	 * Restore the card with the specified suit and number. If the specified CardNumber
-	 * is Joker, then this method tries to restore the first Joker. If the first Joker
-	 * can't be restored, then the second is restored. The method returns true if either
-	 * Joker is restored and false if neither is restored. To make sure both are restored,
-	 * then this method must be called twice. This is not the recommended method to restore
-	 * a Joker, it is preferred to acquire a reference to Joker object and call restoreCard(Card).
+	 * Restore the card with the specified suit and number. 
 	 * 
 	 * @return false if the Card is already in the active deck, or if something
 	 * went wrong inserting the Card into the Deck.
 	 */
 	public boolean restoreCard(Suit suit, CardNumber number) {
-		if(number!=CardNumber.Joker) {
+		if(number!=CardNumber.Joker1 && number!=CardNumber.Joker2) {
 			int location = (suit.getValue()-1)*13;
 			location+=number.getValue();
 			Card c = cards[location];
 			if(deck.contains(c)) return false;
 			return deck.add(c);
 		} else {
-			Card c = jokers[0];
-			boolean success = true;
-			if(deck.contains(c)) success =  false;
-			if(success) success = deck.add(c);
-			if(success) return true;
-			c = jokers[1];
+			Card c = jokers[number == CardNumber.Joker1 ? 0 : 1];
 			if(deck.contains(c)) return false;
 			return deck.add(c);
 		}
 	}
 	
 	/**
-	 * Gets the card with the specified suit and number. If Joker is specified
-	 * this method returns null.
+	 * Gets the card with the specified suit and number.
 	 */
 	public Card getCard(Suit suit, CardNumber number) {
-		if(number!=CardNumber.Joker) return null;
+		if(number==CardNumber.Joker1) return jokers[0];
+		if(number==CardNumber.Joker2) return jokers[1];
 		int location = (suit.getValue()-1)*13;
 		location+=number.getValue();
 		return cards[location];
@@ -124,9 +112,15 @@ public class Deck {
 	
 	/**
 	 * Gets the Jokers in the deck.
-	 * @return
 	 */
 	public Card[] getJokers() {
 		return jokers;
+	}
+	
+	/**
+	 * Gets the Cards in the deck (not including Jokers).
+	 */
+	public Card[] getCards() {
+		return cards;
 	}
 }
