@@ -16,6 +16,7 @@ public class ImageButton extends GenericContainer {
 		setLayout(ContainerType.OVERLAY);
 		tex = new GenericTexture(url);
 		tex.setPriority(RenderPriority.Lowest);
+		tex.setDrawAlphaChannel(false);
 		addChild(tex);
 		button = new GenericButton("") {
 			@Override

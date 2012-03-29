@@ -4,12 +4,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
+import org.dyndns.pamelloes.SpoutCasino.cards.Card.CardBack;
 import org.dyndns.pamelloes.SpoutCasino.cards.Card.CardNumber;
 import org.dyndns.pamelloes.SpoutCasino.cards.Card.Suit;
 
 public class Deck {
 	private final Card[] cards = new Card[52];
 	private final Card[] jokers;
+	private final CardBack smallback;
+	private final CardBack largeback;
 	
 	private ArrayList<Card> deck = new ArrayList<Card>();
 	
@@ -19,6 +22,8 @@ public class Deck {
 	 * to fill the active deck.
 	 */
 	public Deck() {
+		largeback = CardBack.values()[(int) Math.floor(Math.random()*7) + 6];
+		smallback = largeback.ordinal() < 9 ? CardBack.values()[largeback.ordinal() - 6] : largeback.ordinal() < 13 ? CardBack.values()[largeback.ordinal() - 7] : CardBack.values()[largeback.ordinal() - 8];
 		jokers = new Card[]{new Card(this,Suit.Joker,CardNumber.Joker1), new Card(this,Suit.Joker,CardNumber.Joker2)};
 		for(Suit suit : Suit.values()) {
 			if(suit == Suit.Joker) continue;
@@ -123,4 +128,12 @@ public class Deck {
 	public Card[] getCards() {
 		return cards;
 	}
+	
+	/**
+	 * Gets the CardBack associated with this Deck.
+	 */
+	public CardBack getBack(boolean large) {
+		return large ? largeback : smallback;
+	}
+	
 }

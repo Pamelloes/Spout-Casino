@@ -36,9 +36,10 @@ public class WaitingGui extends TableGui {
 				HandlerList.unregisterAll(this);
 			}
 		}, SpoutCasino.casino);
+		
+		makeGui();
 	}
 
-	@Override
 	protected void makeGui() {
 		setSize(200,100);
 

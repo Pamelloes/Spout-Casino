@@ -45,6 +45,33 @@ public class Card {
 			return value;
 		}
 	}
+	public static enum CardBack {
+		RedSmall1("red-75-1"),
+		RedSmall2("red-75-2"),
+		RedSmall3("red-75-3"),
+		BlueSmall1("blue-75-1"),
+		BlueSmall2("blue-75-2"),
+		BlueSmall3("blue-75-3"),
+		
+		RedLarge1("red-150-1"),
+		RedLarge2("red-150-2"),
+		RedLarge3("red-150-3"),
+		RedLarge4("red-150-4"),
+		BlueLarge1("blue-150-1"),
+		BlueLarge2("blue-150-2"),
+		BlueLarge3("blue-150-3"),
+		BlueLarge4("blue-150-4");
+		
+		private final String path;
+		
+		CardBack(String path) {
+			this.path = "Card Deck/back-" + path + ".png";
+		}
+		
+		public String getPath() {
+			return path;
+		}
+	}
 	
 	private final Deck deck;
 	private final Suit suit;

@@ -18,9 +18,9 @@ public class CreateGui extends TableGui {
 	public CreateGui(SpoutPlayer player, Block block) {
 		super(player);
 		this.block = block;
+		makeGui();
 	}
 
-	@Override
 	protected void makeGui() {
 		setSize(210,230);
 		casino.extractFile("blackjack.jpg", true);
