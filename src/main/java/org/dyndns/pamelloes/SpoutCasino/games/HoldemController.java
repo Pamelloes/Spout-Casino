@@ -6,6 +6,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.bukkit.inventory.ItemStack;
 import org.dyndns.pamelloes.SpoutCasino.SpoutCasino;
 import org.dyndns.pamelloes.SpoutCasino.cards.Card;
 import org.dyndns.pamelloes.SpoutCasino.cards.Deck;
@@ -27,9 +28,9 @@ public class HoldemController implements GameController {
 	private boolean inprogress = false;
 	private int dealer = -1, turn = -1;
 	private int pot = 0;
-	private static final int TURN_LENGTH = 30;
-	private static final int GAME_BREAK = 300;
-	private int timeremaining = TURN_LENGTH;
+	private static final int TURN_LENGTH = 300;
+	private static final int GAME_BREAK = 600;
+	private int timeremaining = GAME_BREAK;
 
 	public HoldemController() {
 		deck.makeDeck(false);
@@ -49,13 +50,10 @@ public class HoldemController implements GameController {
 			} else timeremaining--;
 		} else {
 			if(timeremaining % 10 == 0) setTimeRemaining(timeremaining/10);
-			if(timeremaining == 1) {
-				bet(10);
-				advanceTurn();
-			}
 			if(timeremaining <= 0) {
-				if(timeremaining == 0) {
-					fold(turn);
+				if(timeremaining == 0) if(fold(turn)) {
+					for(int i = 0; i < 4; i++) if(players[i] != null) endGame(i);
+					return;
 				}
 				if(turn == dealer) {
 					if(community.size() == 0)  flop();
@@ -120,6 +118,10 @@ public class HoldemController implements GameController {
 		timeremaining = 0;
 	}
 	
+	public void setCall(int call) {
+		for(int i = 0; i < 4; i++) if(players[i]!=null) guis.get(players[i]).setCall(call);
+	}
+	
 	private void flop() {
 		deck.dealTop();//burn
 		Card a = deck.dealTop();
@@ -129,6 +131,7 @@ public class HoldemController implements GameController {
 		community.add(b);
 		community.add(c);
 		for(int i = 0; i < 4; i++) if(players[i] != null) guis.get(players[i]).flop(a, b, c);
+		setCall(0);
 	}
 	
 	private void turn() {
@@ -136,6 +139,7 @@ public class HoldemController implements GameController {
 		Card a = deck.dealTop();
 		community.add(a);
 		for(int i = 0; i < 4; i++) if(players[i] != null) guis.get(players[i]).turn(a);
+		setCall(0);
 	}
 	
 	private void river() {
@@ -143,6 +147,7 @@ public class HoldemController implements GameController {
 		Card a = deck.dealTop();
 		community.add(a);
 		for(int i = 0; i < 4; i++) if(players[i] != null) guis.get(players[i]).turn(a);
+		setCall(0);
 	}
 	
 	private void endGame(int id) {
@@ -203,6 +208,7 @@ public class HoldemController implements GameController {
 		deck.makeDeck(false);
 		deck.shuffle();
 		for(int i = 0; i < 4; i++) if(players[i] != null) startGame(i);
+		setCall(0);
 		nextDealer();
 		turn = dealer;
 		nextTurn();
@@ -255,9 +261,10 @@ public class HoldemController implements GameController {
 		for(int i = 0; i < 4; i++) if(players[i]!=null) guis.get(players[i]).setPot(pot);
 	}
 	
-	private void fold(int player) {
+	private boolean fold(int player) {
 		for(int i = 0; i < 4; i++) if(players[i]!=null) guis.get(players[i]).setState(player, 3);
 		hands.remove(players[player]);
+		return getActivePlayerCount() == 1;
 	}
 	
 	private int getPlayerCount() {
@@ -272,12 +279,12 @@ public class HoldemController implements GameController {
 		return in;
 	}
 	
-	private void giveChips(SpoutPlayer p, int amount) {
-		if(p==null) return;
+	public void giveChips(SpoutPlayer p, int amount) {
+		if(p==null || amount == 0) return;
 		int left = amount;
 		
 		int chips = 0;
-		while(left > SpoutCasino.diamondrate)  {
+		while(left >= SpoutCasino.diamondrate)  {
 			left -= SpoutCasino.diamondrate;
 			chips++;
 			if(chips == 64) {
@@ -288,7 +295,7 @@ public class HoldemController implements GameController {
 		p.getInventory().addItem(new SpoutItemStack(SpoutCasino.diamondchip,chips));
 		
 		chips = 0;
-		while(left > SpoutCasino.goldrate)  {
+		while(left >= SpoutCasino.goldrate)  {
 			left -= SpoutCasino.goldrate;
 			chips++;
 			if(chips == 64) {
@@ -308,5 +315,80 @@ public class HoldemController implements GameController {
 			}
 		}
 		p.getInventory().addItem(new SpoutItemStack(SpoutCasino.ironchip,chips));
+	}
+	
+	public void takeChips(SpoutPlayer p, int amnt) {
+		if(amnt > countChips(p)) throw new RuntimeException("Tried to take " + amnt + " chips from " + p.getName() + " but they only have " + countChips(p) + " chips!");
+		int chips = amnt;
+		ItemStack[] inv = p.getInventory().getContents();
+		for(ItemStack i : inv) {
+			if(i == null) continue;
+			SpoutItemStack sp = new SpoutItemStack(i);
+			if(sp.getMaterial().equals(SpoutCasino.ironchip)) {
+				if(i.getAmount() > chips)  {
+					i.setAmount(i.getAmount() - chips);
+					p.getInventory().setContents(inv);
+					return;
+				} else {
+					chips -= i.getAmount();
+					i.setAmount(0);
+				}
+			}
+			if(sp.getMaterial().equals(SpoutCasino.goldchip)) {
+				while(chips >= SpoutCasino.goldrate)  {
+					chips -= SpoutCasino.goldrate;
+					i.setAmount(i.getAmount() - 1);
+					if(i.getAmount() == 0) break;
+				}
+			}
+			if(sp.getMaterial().equals(SpoutCasino.diamondchip)) {
+				while(chips >= SpoutCasino.diamondrate)  {
+					chips -= SpoutCasino.diamondrate;
+					i.setAmount(i.getAmount() - 1);
+					if(i.getAmount() == 0) break;
+				}
+			}
+		}
+		p.getInventory().setContents(inv);
+		if(chips == 0) return;
+		for(ItemStack i : inv) {
+			if(i == null) continue;
+			SpoutItemStack sp = new SpoutItemStack(i);
+			if(sp.getMaterial().equals(SpoutCasino.ironchip)) { } //shouldn't be any left now.
+			if(sp.getMaterial().equals(SpoutCasino.goldchip)) {
+				if(i.getAmount() * SpoutCasino.goldrate > chips) {
+					int amount = i.getAmount() * SpoutCasino.goldrate;
+					i.setAmount(0);
+					p.getInventory().setContents(inv);
+					amount -= chips;
+					giveChips(p, amount);
+					return;
+				}
+			}
+			if(sp.getMaterial().equals(SpoutCasino.diamondchip)) {
+				if(i.getAmount() * SpoutCasino.diamondrate > chips) {
+					int amount = i.getAmount() * SpoutCasino.diamondrate;
+					i.setAmount(0);
+					p.getInventory().setContents(inv);
+					amount -= chips;
+					giveChips(p, amount);
+					return;
+				}
+			}
+		}
+		throw new RuntimeException("Couldn't take " + amnt + " chips from " + p.getName() + "!!");
+	}
+	
+	public int countChips(SpoutPlayer p) {
+		int chips = 0;
+		ItemStack[] inv = p.getInventory().getContents();
+		for(ItemStack i : inv) {
+			if(i == null) continue;
+			SpoutItemStack sp = new SpoutItemStack(i);
+			if(sp.getMaterial().equals(SpoutCasino.ironchip)) chips += i.getAmount();
+			if(sp.getMaterial().equals(SpoutCasino.goldchip)) chips += i.getAmount() * SpoutCasino.goldrate;
+			if(sp.getMaterial().equals(SpoutCasino.diamondchip)) chips += i.getAmount() * SpoutCasino.diamondrate;
+		}
+		return chips;
 	}
 }

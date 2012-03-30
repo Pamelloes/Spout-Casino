@@ -34,6 +34,7 @@ public class HoldemGui extends TableGui {
 	private Label remaining, remcaption, pot, caption;
 	private Button call, fold, raise1, raise10;
 	private boolean turn, dealer;
+	private int callamnt;
 
 	public HoldemGui(SpoutPlayer player, HoldemController control, int id) {
 		super(player);
@@ -117,18 +118,18 @@ public class HoldemGui extends TableGui {
 		call = new GenericButton("Call") {
 			@Override
 			public void onButtonClick(ButtonClickEvent e) {
-				
+				bet(callamnt);
 			}
 		};
-		call.setMargin(5).setPriority(RenderPriority.Lowest);
+		call.setMargin(5).setPriority(RenderPriority.Lowest).setWidth(10).setHeight(10);
 		lcont.addChild(call);
 		fold = new GenericButton("Fold") {
 			@Override
 			public void onButtonClick(ButtonClickEvent e) {
-				
+				control.fold();
 			}
 		};
-		fold.setMargin(5).setPriority(RenderPriority.Lowest);
+		fold.setMargin(5).setPriority(RenderPriority.Lowest).setWidth(10).setHeight(10);
 		lcont.addChild(fold);
 		bot.addChild(lcont);
 		
@@ -146,18 +147,18 @@ public class HoldemGui extends TableGui {
 		raise1 = new GenericButton("Raise 1") {
 			@Override
 			public void onButtonClick(ButtonClickEvent e) {
-				
+				bet(callamnt + 1);
 			}
 		};
-		raise1.setMargin(5,9,5,-5).setPriority(RenderPriority.Lowest);
+		raise1.setMargin(5,9,5,-5).setPriority(RenderPriority.Lowest).setWidth(10).setHeight(10);
 		rcont.addChild(raise1);
 		raise10 = new GenericButton("Raise 10") {
 			@Override
 			public void onButtonClick(ButtonClickEvent e) {
-				
+				bet(callamnt + 10);
 			}
 		};
-		raise10.setMargin(5,9,5,-5).setPriority(RenderPriority.Lowest);
+		raise10.setMargin(5,9,5,-5).setPriority(RenderPriority.Lowest).setWidth(10).setHeight(10);
 		rcont.addChild(raise10);
 		bot.addChild(rcont);
 		
@@ -175,7 +176,7 @@ public class HoldemGui extends TableGui {
 			}
 		};
 		bg = new GenericGradient(dealercolor);
-		bg.setPriority(RenderPriority.Normal).setVisible(false).setMargin(2,0,-2,0);
+		bg.setPriority(RenderPriority.Normal).setVisible(false).setMargin(2,0,-2,0).setWidth(10).setHeight(10);
 		caption = new GenericLabel("Waiting");
 		caption.setScale(1.5f).setTextColor(new Color(1.0f,0.3f,0.3f)).setAlign(WidgetAnchor.CENTER_CENTER).setPriority(RenderPriority.Low).setMargin(0);
 		bottom.setLayout(ContainerType.OVERLAY);
@@ -203,10 +204,11 @@ public class HoldemGui extends TableGui {
 			turn = true;
 			bg.setVisible(true);
 			bg.setColor(turncolor);
-			call.setEnabled(true);
+			int chips = control.countChips(player);
+			call.setEnabled(chips >= callamnt);
 			fold.setEnabled(true);
-			raise1.setEnabled(true);
-			raise10.setEnabled(true);
+			raise1.setEnabled(chips >= callamnt + 1);
+			raise10.setEnabled(chips >= callamnt + 10);
 		} else {
 			turn = false;
 			call.setEnabled(false);
@@ -272,6 +274,11 @@ public class HoldemGui extends TableGui {
 		this.pot.setText("Pot: " + pot);
 	}
 	
+	public void setCall(int call) {
+		this.call.setText(call > 0 ? "Call " + call : "Check");
+		callamnt = call;
+	}
+	
 	private void setState(int state) {
 		switch(state) {
 		case 0:
@@ -311,5 +318,12 @@ public class HoldemGui extends TableGui {
 			raise10.setVisible(false);
 			break;
 		}
+	}
+	
+	private void bet(int amnt) {
+		control.takeChips(player,amnt);
+		control.setCall(amnt);
+		control.bet(amnt);
+		control.advanceTurn();
 	}
 }
