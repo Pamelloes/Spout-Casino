@@ -199,7 +199,7 @@ public class HoldemGui extends TableGui {
 		else others[id].setState(state);
 	}
 	
-	public void setTurn(int id) {
+	public void setTurn(int id, boolean full) {
 		if(id == this.id) {
 			turn = true;
 			bg.setVisible(true);
@@ -207,8 +207,8 @@ public class HoldemGui extends TableGui {
 			int chips = control.countChips(player);
 			call.setEnabled(chips >= callamnt);
 			fold.setEnabled(true);
-			raise1.setEnabled(chips >= callamnt + 1);
-			raise10.setEnabled(chips >= callamnt + 10);
+			raise1.setEnabled(full && chips >= callamnt + 1);
+			raise10.setEnabled(full && chips >= callamnt + 10);
 		} else {
 			turn = false;
 			call.setEnabled(false);

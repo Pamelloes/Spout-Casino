@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.bukkit.inventory.ItemStack;
 import org.dyndns.pamelloes.SpoutCasino.SpoutCasino;
@@ -19,6 +20,7 @@ public class HoldemController implements GameController {
 	private List<SpoutPlayer> requests = new ArrayList<SpoutPlayer>();
 	
 	private SpoutPlayer[] players = new SpoutPlayer[4];
+	private int[] bets = new int[4];
 	private Map<SpoutPlayer, Card[]> hands = new HashMap<SpoutPlayer, Card[]>();
 	private Map<SpoutPlayer, HoldemGui> guis = new HashMap<SpoutPlayer, HoldemGui>();
 	private List<Card> community = new ArrayList<Card>();
@@ -27,7 +29,8 @@ public class HoldemController implements GameController {
 	
 	private boolean inprogress = false;
 	private int dealer = -1, turn = -1;
-	private int pot = 0;
+	private int pot = 0, call = 0;
+	private boolean round = false;
 	private static final int TURN_LENGTH = 300;
 	private static final int GAME_BREAK = 600;
 	private int timeremaining = GAME_BREAK;
@@ -56,16 +59,23 @@ public class HoldemController implements GameController {
 					return;
 				}
 				if(turn == dealer) {
-					if(community.size() == 0)  flop();
-					else if (community.size() == 3) turn();
-					else if (community.size() == 4) river();
-					else if (community.size() == 5) {
-						int winner = 0;//get best hand somehow :D
-						endGame(winner);
-						return;
+					if(round) {
+						if(community.size() == 0)  flop();
+						else if (community.size() == 3) turn();
+						else if (community.size() == 4) river();
+						else if (community.size() == 5) {
+							int[] winners = findWinner();
+							endGame(winners);
+							return;
+						}
+						round = false;
+					} else {
+						round = true;
 					}
 				}
 				nextTurn();
+				if(round && bets[turn] == call) timeremaining = -1;
+				else if(round) guis.get(players[turn]).setCall(call - bets[turn]);
 			} else timeremaining--;
 		}
 	}
@@ -108,6 +118,7 @@ public class HoldemController implements GameController {
 	
 	public void bet(int amount) {
 		setPot(pot+amount);
+		bets[turn] = amount;
 	}
 	
 	public void advanceTurn() {
@@ -119,6 +130,7 @@ public class HoldemController implements GameController {
 	}
 	
 	public void setCall(int call) {
+		this.call = call;
 		for(int i = 0; i < 4; i++) if(players[i]!=null) guis.get(players[i]).setCall(call);
 	}
 	
@@ -150,8 +162,8 @@ public class HoldemController implements GameController {
 		setCall(0);
 	}
 	
-	private void endGame(int id) {
-		giveChips(players[id], pot);
+	private void endGame(int... ids) {
+		for(int id : ids) giveChips(players[id], (int) (((double)pot)/((double)ids.length)));
 		for(int i = 0; i < 4; i++) if(players[i]!=null) {
 			guis.get(players[i]).clearCommunity();
 			for(int j = 0; j < 4; j++) if(players[j]!=null) guis.get(players[i]).setState(j, 1);
@@ -193,7 +205,7 @@ public class HoldemController implements GameController {
 			}
 		}
 		gui.setDealer(inprogress ? dealer : -1);
-		gui.setTurn(inprogress ? turn: -1);
+		gui.setTurn(inprogress ? turn: -1, !round);
 		gui.setPot(pot);
 		gui.setTimeRemaining(timeremaining, inprogress);
 		if(community.size() > 2) gui.flop(community.get(0), community.get(1), community.get(2));
@@ -205,6 +217,7 @@ public class HoldemController implements GameController {
 	
 	private void startGame() {
 		inprogress = true;
+		round = false;
 		deck.makeDeck(false);
 		deck.shuffle();
 		for(int i = 0; i < 4; i++) if(players[i] != null) startGame(i);
@@ -249,7 +262,7 @@ public class HoldemController implements GameController {
 	}
 	
 	private void setTurn(int turn) {
-		for(int i = 0; i < 4; i++) if(players[i] != null) guis.get(players[i]).setTurn(turn);
+		for(int i = 0; i < 4; i++) if(players[i] != null) guis.get(players[i]).setTurn(turn, !round);
 	}
 	
 	private void setTimeRemaining(int time) {
@@ -277,6 +290,60 @@ public class HoldemController implements GameController {
 		int in = 0;
 		for(SpoutPlayer p : players) if(p!=null && hands.containsKey(p)) in++;
 		return in;
+	}
+	
+	private int[] findWinner() {
+		Map<SpoutPlayer, Card[]> besthands = new HashMap<SpoutPlayer, Card[]>();
+		for(int i = 0; i < 4; i++) if(players[i] != null) {
+			Card[] total = new Card[7];
+			System.arraycopy(hands.get(players[i]), 0, total, 0, 2);
+			System.arraycopy(community.toArray(), 0, total, 2, 5);
+			besthands.put(players[i], Poker.getBestHand(total));
+		}
+		List<Entry<SpoutPlayer, Card[]>> best = null;
+		for(Entry<SpoutPlayer, Card[]> entry : besthands.entrySet()) {
+			if(best == null) {
+				best = new ArrayList<Entry<SpoutPlayer, Card[]>>();
+				best.add(entry);
+				continue;
+			}
+			Card[] btemp = Poker.compareHands(best.get(0).getValue(), entry.getValue());
+			if(btemp!=null) {
+				if(entry.getValue().equals(btemp)) {
+					best.clear();
+					best.add(entry);
+				}
+			} else {
+				Card[] h1 = hands.get(best.get(0).getKey());
+				Card[] h2 = hands.get(entry.getKey());
+				boolean p1 = Poker.pair(h1);
+				boolean p2 = Poker.pair(h2);
+				if(p1 && p2) {
+					Card[] res = Poker.comparePair(h1,h2);
+					if(h2.equals(res)) {
+						best.clear();
+						best.add(entry);
+					}
+				} else if(p2 && !p1) {
+					best.clear();
+					best.add(entry);
+				} else if (!p1 && !p2){
+					Card[] res = Poker.comparePair(h1,h2);
+					if(h2.equals(res)) {
+						best.clear();
+						best.add(entry);
+					} else if(res == null) {
+						best.add(entry);
+					}
+				}
+			}
+		}
+		int[] results = new int[best.size()];
+		for(int i = 0; i < results.length; i++) for(int j = 0; j < 4; j++) if(best.get(i).getKey().equals(players[j])) {
+			results[i] = j;
+			break;
+		}
+		return results;
 	}
 	
 	public void giveChips(SpoutPlayer p, int amount) {
