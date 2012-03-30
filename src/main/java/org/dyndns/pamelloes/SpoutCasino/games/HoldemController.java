@@ -31,7 +31,7 @@ public class HoldemController implements GameController {
 	private int dealer = -1, turn = -1;
 	private int pot = 0, call = 0;
 	private boolean round = false;
-	private static final int TURN_LENGTH = 300;
+	private static final int TURN_LENGTH = 1000;
 	private static final int GAME_BREAK = 600;
 	private int timeremaining = GAME_BREAK;
 
@@ -53,6 +53,7 @@ public class HoldemController implements GameController {
 			} else timeremaining--;
 		} else {
 			if(timeremaining % 10 == 0) setTimeRemaining(timeremaining/10);
+			if(round && bets[turn] == call) timeremaining = -1;
 			if(timeremaining <= 0) {
 				if(timeremaining == 0) if(fold(turn)) {
 					for(int i = 0; i < 4; i++) if(players[i] != null) endGame(i);
@@ -60,6 +61,7 @@ public class HoldemController implements GameController {
 				}
 				if(turn == dealer) {
 					if(round) {
+						for(int i = 0; i < 4; i++) bets[i] = 0;
 						if(community.size() == 0)  flop();
 						else if (community.size() == 3) turn();
 						else if (community.size() == 4) river();
@@ -74,8 +76,6 @@ public class HoldemController implements GameController {
 					}
 				}
 				nextTurn();
-				if(round && bets[turn] == call) timeremaining = -1;
-				else if(round) guis.get(players[turn]).setCall(call - bets[turn]);
 			} else timeremaining--;
 		}
 	}
@@ -118,7 +118,7 @@ public class HoldemController implements GameController {
 	
 	public void bet(int amount) {
 		setPot(pot+amount);
-		bets[turn] = amount;
+		bets[turn] += amount;
 	}
 	
 	public void advanceTurn() {
@@ -131,7 +131,7 @@ public class HoldemController implements GameController {
 	
 	public void setCall(int call) {
 		this.call = call;
-		for(int i = 0; i < 4; i++) if(players[i]!=null) guis.get(players[i]).setCall(call);
+		for(int i = 0; i < 4; i++) if(players[i]!=null) guis.get(players[i]).setCall(call - bets[i]);
 	}
 	
 	private void flop() {
@@ -294,7 +294,7 @@ public class HoldemController implements GameController {
 	
 	private int[] findWinner() {
 		Map<SpoutPlayer, Card[]> besthands = new HashMap<SpoutPlayer, Card[]>();
-		for(int i = 0; i < 4; i++) if(players[i] != null) {
+		for(int i = 0; i < 4; i++) if(players[i] != null && hands.containsKey(players[i])) {
 			Card[] total = new Card[7];
 			System.arraycopy(hands.get(players[i]), 0, total, 0, 2);
 			System.arraycopy(community.toArray(), 0, total, 2, 5);

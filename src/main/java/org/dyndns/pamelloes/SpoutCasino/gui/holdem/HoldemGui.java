@@ -33,7 +33,7 @@ public class HoldemGui extends TableGui {
 	private int id;
 	private Label remaining, remcaption, pot, caption;
 	private Button call, fold, raise1, raise10;
-	private boolean turn, dealer;
+	private boolean turn, dealer, full;
 	private int callamnt;
 
 	public HoldemGui(SpoutPlayer player, HoldemController control, int id) {
@@ -200,6 +200,7 @@ public class HoldemGui extends TableGui {
 	}
 	
 	public void setTurn(int id, boolean full) {
+		this.full = full;
 		if(id == this.id) {
 			turn = true;
 			bg.setVisible(true);
@@ -322,7 +323,7 @@ public class HoldemGui extends TableGui {
 	
 	private void bet(int amnt) {
 		control.takeChips(player,amnt);
-		control.setCall(amnt);
+		if(full) control.setCall(amnt);
 		control.bet(amnt);
 		control.advanceTurn();
 	}
