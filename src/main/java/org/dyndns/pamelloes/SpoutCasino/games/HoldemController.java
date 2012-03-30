@@ -27,7 +27,9 @@ public class HoldemController implements GameController {
 	private boolean inprogress = false;
 	private int dealer = -1, turn = -1;
 	private int pot = 0;
-	private int timeremaining = 300;
+	private static final int TURN_LENGTH = 30;
+	private static final int GAME_BREAK = 300;
+	private int timeremaining = TURN_LENGTH;
 
 	public HoldemController() {
 		deck.makeDeck(false);
@@ -40,9 +42,21 @@ public class HoldemController implements GameController {
 	public void onTick() {
 		acceptRequests();
 		if(!inprogress) {
-			if(getPlayerCount() >= 2) startGame();
-		} else {
+			if(timeremaining % 10 == 0) setTimeRemaining(timeremaining/10);
 			if(timeremaining == 0) {
+				if(getPlayerCount() >= 2) startGame();
+				else timeremaining = GAME_BREAK;
+			} else timeremaining--;
+		} else {
+			if(timeremaining % 10 == 0) setTimeRemaining(timeremaining/10);
+			if(timeremaining == 1) {
+				bet(10);
+				advanceTurn();
+			}
+			if(timeremaining <= 0) {
+				if(timeremaining == 0) {
+					fold(turn);
+				}
 				if(turn == dealer) {
 					if(community.size() == 0)  flop();
 					else if (community.size() == 3) turn();
@@ -54,7 +68,6 @@ public class HoldemController implements GameController {
 					}
 				}
 				nextTurn();
-				
 			} else timeremaining--;
 		}
 	}
@@ -72,17 +85,18 @@ public class HoldemController implements GameController {
 		hands.remove(player);
 		guis.remove(player);
 		int id = -1;
-		for(int i = 0; i < 4; i++) if(players[i]==player) {
+		for(int i = 0; i < 4; i++) if(players[i] == player) {
 			players[i] = null;
 			id = i;
 		}
-		for(int i = 0; i < 4; i++) if(players[i]!=null) guis.get(players[i]).setState(id, 0);
+		if(id == -1) return;
+		for(int i = 0; i < 4; i++) if(players[i] !=null) guis.get(players[i]).setState(id, 0);
 		if(getActivePlayerCount() == 1) {
 			for(int i = 0; i < 4; i++) if(players[i] != null) endGame(i);
 			return;
 		}
-		if(id == dealer) nextDealer();
-		if(id == turn) nextTurn();
+		if(id == dealer && inprogress) nextDealer();
+		if(id == turn && inprogress) nextTurn();
 	}
 
 	public void handleForcedTermination() {
@@ -95,7 +109,15 @@ public class HoldemController implements GameController {
 	}
 	
 	public void bet(int amount) {
-		pot+=amount;
+		setPot(pot+amount);
+	}
+	
+	public void advanceTurn() {
+		timeremaining = -1;
+	}
+	
+	public void fold() {
+		timeremaining = 0;
 	}
 	
 	private void flop() {
@@ -125,12 +147,17 @@ public class HoldemController implements GameController {
 	
 	private void endGame(int id) {
 		giveChips(players[id], pot);
+		for(int i = 0; i < 4; i++) if(players[i]!=null) {
+			guis.get(players[i]).clearCommunity();
+			for(int j = 0; j < 4; j++) if(players[j]!=null) guis.get(players[i]).setState(j, 1);
+		}
 		inprogress = false;
-		turn = -1;
+		setTurn(-1);
 		setDealer(-1);
+		timeremaining = GAME_BREAK;
+		setPot(0);
 		hands.clear();
 		community.clear();
-		pot = 0;
 	}
 	
 	private void acceptRequests() {
@@ -147,6 +174,7 @@ public class HoldemController implements GameController {
 		WaitingGui.waiting.remove(player);
 		player.getMainScreen().closePopup();
 		HoldemGui gui = new HoldemGui(player,this,id);
+		gui.setState(id, 1);
 		for(int i = 0; i < 4; i++) {
 			if(i == id) continue;
 			if(players[i] == null) {
@@ -160,7 +188,9 @@ public class HoldemController implements GameController {
 			}
 		}
 		gui.setDealer(inprogress ? dealer : -1);
-		gui.setTurn(turn);
+		gui.setTurn(inprogress ? turn: -1);
+		gui.setPot(pot);
+		gui.setTimeRemaining(timeremaining, inprogress);
 		if(community.size() > 2) gui.flop(community.get(0), community.get(1), community.get(2));
 		if(community.size() > 3) gui.turn(community.get(3));
 		if(community.size() > 4) gui.river(community.get(4));
@@ -184,7 +214,7 @@ public class HoldemController implements GameController {
 		hands.put(player, hand);
 		guis.get(player).showCards(hand[0], hand[1]);
 		for(int i = 0; i < 4; i++) {
-			if(i == id || players[i] == null) continue;
+			if(players[i] == null) continue;
 			guis.get(players[i]).setState(id, 2);
 		}
 	}
@@ -192,8 +222,9 @@ public class HoldemController implements GameController {
 	private void nextDealer() {
 		while(true) {
 			dealer = (dealer + 1) % 4;
-			if(players[dealer] == null || !guis.containsKey(players[dealer])) continue;
+			if(players[dealer] == null || !hands.containsKey(players[dealer])) continue;
 			setDealer(dealer);
+			return;
 		}
 	}
 	
@@ -204,14 +235,29 @@ public class HoldemController implements GameController {
 	private void nextTurn() {
 		while(true) {
 			turn = (turn + 1) % 4;
-			if(players[turn] == null || !guis.containsKey(players[dealer])) continue;
+			if(players[turn] == null || !hands.containsKey(players[turn])) continue;
 			setTurn(turn);
+			timeremaining = TURN_LENGTH;
+			return;
 		}
 	}
 	
 	private void setTurn(int turn) {
 		for(int i = 0; i < 4; i++) if(players[i] != null) guis.get(players[i]).setTurn(turn);
-		timeremaining = 300;
+	}
+	
+	private void setTimeRemaining(int time) {
+		for(int i = 0; i < 4; i++) if(players[i]!=null) guis.get(players[i]).setTimeRemaining(time, inprogress);
+	}
+	
+	private void setPot(int pot) {
+		this.pot = pot;
+		for(int i = 0; i < 4; i++) if(players[i]!=null) guis.get(players[i]).setPot(pot);
+	}
+	
+	private void fold(int player) {
+		for(int i = 0; i < 4; i++) if(players[i]!=null) guis.get(players[i]).setState(player, 3);
+		hands.remove(players[player]);
 	}
 	
 	private int getPlayerCount() {
@@ -222,11 +268,12 @@ public class HoldemController implements GameController {
 	
 	private int getActivePlayerCount() {
 		int in = 0;
-		for(SpoutPlayer p : players) if(p!=null && hands.containsKey(players)) in++;
+		for(SpoutPlayer p : players) if(p!=null && hands.containsKey(p)) in++;
 		return in;
 	}
 	
 	private void giveChips(SpoutPlayer p, int amount) {
+		if(p==null) return;
 		int left = amount;
 		
 		int chips = 0;
@@ -253,6 +300,7 @@ public class HoldemController implements GameController {
 		
 		chips = 0;
 		while(left > 0) {
+			left--;
 			chips++;
 			if(chips == 64) {
 				chips = 0;
