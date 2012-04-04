@@ -28,6 +28,7 @@ public class WaitingGui extends TableGui {
 			@SuppressWarnings("unused")
 			@EventHandler
 			public void onScreenClose(ScreenCloseEvent e) {
+				if(e.getScreen() == null) return;
 				if(!e.getScreen().equals(WaitingGui.this)) return;
 				if(waiting.contains(e.getPlayer())) {
 					onCancelled.run();
